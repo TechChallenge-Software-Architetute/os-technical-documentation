@@ -106,6 +106,16 @@ O script `init.sh` é executado **automaticamente** na primeira vez que o contai
 
 ## SonarQube
 
+Comando para rodar o OWASP ZAP:
+```
+docker compose --profile quality up
+```
+
+OBS: Antes de executar o profile security, é recomendado limpar os containeres e volumes antigos usuando o seguinte comando:
+```
+docker system prune -a --volumes -f
+```
+
 Acessível em `http://localhost:9000` após subir.
 
 **Credenciais padrão:** `admin` / `admin` (altere no primeiro acesso)
@@ -118,6 +128,16 @@ Para rodar a análise:
 ---
 
 ## OWASP ZAP
+
+Comando para rodar o OWASP ZAP:
+```
+docker compose --profile security up
+```
+
+OBS: Antes de executar o profile security, é recomendado limpar os containeres e volumes antigos usuando o seguinte comando:
+```
+docker system prune -a --volumes -f
+```
 
 O ZAP roda como serviço no Docker Compose após a validação. Os relatórios são salvos em:
 ```
