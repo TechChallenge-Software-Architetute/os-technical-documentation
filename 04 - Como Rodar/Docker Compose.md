@@ -106,7 +106,7 @@ O script `init.sh` é executado **automaticamente** na primeira vez que o contai
 
 ## SonarQube
 
-Comando para rodar o OWASP ZAP:
+Comando para rodar o SonarQube:
 ```
 docker compose --profile quality up
 ```
