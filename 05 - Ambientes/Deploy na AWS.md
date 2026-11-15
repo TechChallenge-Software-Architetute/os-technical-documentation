@@ -17,7 +17,7 @@ O sistema está dividido em 7 repositórios, cada um com o próprio pipeline no 
 Nenhum stack lê o state Terraform de outro. Os valores que um repositório precisa de outro (VPC, subnets, URL do banco) entram como secrets preenchidos à mão, a partir dos outputs do stack anterior. Por isso a ordem abaixo importa: cada etapa produz valores que a próxima consome.
 
 > [!info] Conta e região
-> Conta `211125744084`, região `us-east-1`. A região já é o padrão de todos os stacks e pipelines, então `AWS_REGION` é opcional.
+> Conta `211125744084`. A região é definida pelo secret `AWS_REGION`, que é **obrigatório**: sem ele, os stacks e pipelines caem no padrão `us-east-1` e o deploy vai para a região errada. Os comandos deste guia leem a mesma região da variável de ambiente `AWS_REGION` (por exemplo, `export AWS_REGION=us-east-2`).
 
 > [!attention] Não use a conta do AWS Academy
 > O Learner Lab do AWS Academy não deixa criar usuários IAM nem access keys próprias. As únicas credenciais são as temporárias do lab, que expiram a cada sessão, e por isso não dá para criar o usuário de deploy que os pipelines usam. Faça o deploy com uma **conta AWS pessoal** e um usuário IAM com access keys permanentes. Com essas chaves o `AWS_SESSION_TOKEN_DEVELOP` não é necessário e pode ficar vazio.
@@ -30,8 +30,10 @@ Nenhum stack lê o state Terraform de outro. Os valores que um repositório prec
 O Terraform não cria o próprio backend, então o bucket precisa existir antes do primeiro deploy. Um bucket serve os dois ambientes, porque a chave do state já separa componente e ambiente (`<componente>/<env>/terraform.tfstate`). O lock é nativo do S3 (`use_lockfile=true`), sem tabela DynamoDB.
 
 ```bash
+export AWS_REGION=us-east-2   # a mesma região do secret AWS_REGION
 BUCKET=os-management-tfstate-211125744084
-aws s3api create-bucket --bucket "$BUCKET" --region us-east-1
+aws s3api create-bucket --bucket "$BUCKET" \
+  --create-bucket-configuration LocationConstraint="$AWS_REGION"   # omita esta linha se a região for us-east-1
 aws s3api put-bucket-versioning --bucket "$BUCKET" --versioning-configuration Status=Enabled
 aws s3api put-bucket-encryption --bucket "$BUCKET" \
   --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
@@ -50,6 +52,7 @@ Configure estes antes de qualquer deploy. Todos os repositórios usam.
 | `AWS_ACCESS_KEY_ID_DEVELOP` / `_MAIN` | Access key do usuário de deploy |
 | `AWS_SECRET_ACCESS_KEY_DEVELOP` / `_MAIN` | Secret key do usuário de deploy |
 | `AWS_SESSION_TOKEN_DEVELOP` | Não é necessário com conta pessoal. Só se usa com chaves temporárias (prefixo `ASIA...`) |
+| `AWS_REGION` | Região do deploy, por exemplo `us-east-2`. Obrigatório |
 | `AWS_ACCOUNT_ID_DEVELOP` / `_MAIN` | `211125744084` |
 | `TF_STATE_BUCKET_DEVELOP` / `_MAIN` | Nome do bucket criado acima |
 
@@ -181,7 +184,7 @@ Aplicação Spring Boot no EKS (`kubectl apply -k k8s/`), mais o stack Terraform
 | `ORIGIN_URL` (develop, **sem sufixo**) / `ORIGIN_URL_MAIN` | Hostname do LoadBalancer do Service `os-management`, no formato `http://<hostname>:8080` |
 
 ```bash
-aws eks update-kubeconfig --name os-management-develop --region us-east-1
+aws eks update-kubeconfig --name os-management-develop --region "$AWS_REGION"
 kubectl get svc os-management -n os-management \
   -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
