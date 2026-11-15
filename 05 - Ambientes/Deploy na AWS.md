@@ -26,6 +26,43 @@ Nenhum stack lê o state Terraform de outro. Os valores que um repositório prec
 
 ## Etapa 0 — Pré-requisitos (uma vez por conta)
 
+### Usuário IAM de deploy (Access Key e Secret Key)
+Os pipelines autenticam na AWS com a access key de um usuário IAM. Esse usuário precisa ser criado à mão no console da AWS, uma vez por conta. Os passos abaixo usam o console web.
+
+**1. Criar o usuário**
+1. Entre no [console da AWS](https://console.aws.amazon.com/) com a sua conta pessoal.
+2. Na barra de busca do topo, digite **IAM** e abra o serviço.
+3. No menu da esquerda, clique em **Users** e depois em **Create user**.
+4. Em **User name**, digite `github-actions-deploy`. Deixe **desmarcado** o "Provide user access to the AWS Management Console", porque esse usuário só é usado pelos pipelines. Clique em **Next**.
+5. Em **Permissions options**, escolha **Attach policies directly**.
+6. Na lista de políticas, busque `AdministratorAccess` e marque a caixa. Os stacks criam VPC, EKS, RDS, Lambda, IAM, SQS, DynamoDB e API Gateway, por isso o usuário precisa de acesso total. Clique em **Next**.
+7. Revise e clique em **Create user**.
+
+**2. Gerar a Access Key e a Secret Key**
+1. Na lista de **Users**, clique em `github-actions-deploy`.
+2. Abra a aba **Security credentials**.
+3. Na seção **Access keys**, clique em **Create access key**.
+4. Em **Use case**, escolha **Application running outside AWS** e clique em **Next**.
+5. A descrição é opcional (por exemplo, `GitHub Actions`). Clique em **Create access key**.
+6. A tela mostra o **Access key** (começa com `AKIA...`) e o **Secret access key**. Copie os dois ou clique em **Download .csv file**.
+
+> [!warning] A Secret Key aparece uma vez só
+> Depois que você sai dessa tela, a AWS não mostra a Secret Key de novo. Se perder, desative a chave na mesma aba (**Actions → Deactivate**, depois **Delete**) e crie outra. Nunca coloque essas chaves em arquivo do repositório; elas vão só nos secrets do GitHub.
+
+**3. Pegar o ID da conta**
+Clique no nome da conta no canto superior direito do console. O **Account ID** (12 dígitos) aparece no menu, com um botão de copiar.
+
+**4. Cadastrar no GitHub**
+Na organização `TechChallenge-Software-Architetute`, abra **Settings → Secrets and variables → Actions → New organization secret** e crie:
+
+| Secret | Valor |
+|---|---|
+| `AWS_ACCESS_KEY_ID_DEVELOP` / `_MAIN` | Access key do passo 2 |
+| `AWS_SECRET_ACCESS_KEY_DEVELOP` / `_MAIN` | Secret access key do passo 2 |
+| `AWS_ACCOUNT_ID_DEVELOP` / `_MAIN` | Account ID do passo 3 |
+
+Os demais secrets base estão na tabela [[#Secrets base]]. Para cadastrar só em um repositório, o caminho é o mesmo, mas em **Settings** do repositório.
+
 ### Bucket de state do Terraform
 O Terraform não cria o próprio backend, então o bucket precisa existir antes do primeiro deploy. Um bucket serve os dois ambientes, porque a chave do state já separa componente e ambiente (`<componente>/<env>/terraform.tfstate`). O lock é nativo do S3 (`use_lockfile=true`), sem tabela DynamoDB.
 
@@ -52,8 +89,8 @@ Configure estes antes de qualquer deploy. Todos os repositórios usam.
 
 | Secret | Valor |
 |---|---|
-| `AWS_ACCESS_KEY_ID_DEVELOP` / `_MAIN` | Access key do usuário de deploy |
-| `AWS_SECRET_ACCESS_KEY_DEVELOP` / `_MAIN` | Secret key do usuário de deploy |
+| `AWS_ACCESS_KEY_ID_DEVELOP` / `_MAIN` | Access key do usuário de deploy (veja [[#Usuário IAM de deploy (Access Key e Secret Key)]]) |
+| `AWS_SECRET_ACCESS_KEY_DEVELOP` / `_MAIN` | Secret key do usuário de deploy (mesma seção) |
 | `AWS_SESSION_TOKEN_DEVELOP` | Não é necessário com conta pessoal. Só se usa com chaves temporárias (prefixo `ASIA...`) |
 | `AWS_REGION` | Região do deploy, por exemplo `us-east-2`. Obrigatório |
 | `AWS_ACCOUNT_ID_DEVELOP` / `_MAIN` | ID da sua conta (12 dígitos), obtido com `aws sts get-caller-identity --query Account --output text` |
