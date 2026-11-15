@@ -51,6 +51,7 @@ cssclasses:
 - [[Variaveis de Ambiente]] — Todas as variáveis configuráveis
 - [[Configuracao Local]] — Desenvolvimento local
 - [[Configuracao Docker]] — Ambiente containerizado
+- [[Deploy na AWS]] — Ordem de deploy dos repositórios e secrets a preencher
 
 ### Segurança
 - [[JWT]] — Geração, validação e claims
