@@ -17,7 +17,7 @@ O sistema está dividido em 7 repositórios, cada um com o próprio pipeline no 
 Nenhum stack lê o state Terraform de outro. Os valores que um repositório precisa de outro (VPC, subnets, URL do banco) entram como secrets preenchidos à mão, a partir dos outputs do stack anterior. Por isso a ordem abaixo importa: cada etapa produz valores que a próxima consome.
 
 > [!info] Conta e região
-> Conta `211125744084`. A região é definida pelo secret `AWS_REGION`, que é **obrigatório**: sem ele, os stacks e pipelines caem no padrão `us-east-1` e o deploy vai para a região errada. Os comandos deste guia leem a mesma região da variável de ambiente `AWS_REGION` (por exemplo, `export AWS_REGION=us-east-2`).
+> A região é definida pelo secret `AWS_REGION`, que é **obrigatório**: sem ele, os stacks e pipelines caem no padrão `us-east-1` e o deploy vai para a região errada. Os comandos deste guia leem a mesma região da variável de ambiente `AWS_REGION` (por exemplo, `export AWS_REGION=us-east-2`).
 
 > [!attention] Não use a conta do AWS Academy
 > O Learner Lab do AWS Academy não deixa criar usuários IAM nem access keys próprias. As únicas credenciais são as temporárias do lab, que expiram a cada sessão, e por isso não dá para criar o usuário de deploy que os pipelines usam. Faça o deploy com uma **conta AWS pessoal** e um usuário IAM com access keys permanentes. Com essas chaves o `AWS_SESSION_TOKEN_DEVELOP` não é necessário e pode ficar vazio.
@@ -29,9 +29,12 @@ Nenhum stack lê o state Terraform de outro. Os valores que um repositório prec
 ### Bucket de state do Terraform
 O Terraform não cria o próprio backend, então o bucket precisa existir antes do primeiro deploy. Um bucket serve os dois ambientes, porque a chave do state já separa componente e ambiente (`<componente>/<env>/terraform.tfstate`). O lock é nativo do S3 (`use_lockfile=true`), sem tabela DynamoDB.
 
+O nome do bucket termina com o **ID da sua conta AWS**. Nomes de bucket S3 são únicos no mundo inteiro, e o sufixo com o ID da conta evita colisão entre contas diferentes. O comando abaixo descobre o ID sozinho a partir das credenciais configuradas. Use o nome resultante no secret `TF_STATE_BUCKET_*`.
+
 ```bash
 export AWS_REGION=us-east-2   # a mesma região do secret AWS_REGION
-BUCKET=os-management-tfstate-211125744084
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+BUCKET=os-management-tfstate-$ACCOUNT_ID
 aws s3api create-bucket --bucket "$BUCKET" \
   --create-bucket-configuration LocationConstraint="$AWS_REGION"   # omita esta linha se a região for us-east-1
 aws s3api put-bucket-versioning --bucket "$BUCKET" --versioning-configuration Status=Enabled
@@ -53,7 +56,7 @@ Configure estes antes de qualquer deploy. Todos os repositórios usam.
 | `AWS_SECRET_ACCESS_KEY_DEVELOP` / `_MAIN` | Secret key do usuário de deploy |
 | `AWS_SESSION_TOKEN_DEVELOP` | Não é necessário com conta pessoal. Só se usa com chaves temporárias (prefixo `ASIA...`) |
 | `AWS_REGION` | Região do deploy, por exemplo `us-east-2`. Obrigatório |
-| `AWS_ACCOUNT_ID_DEVELOP` / `_MAIN` | `211125744084` |
+| `AWS_ACCOUNT_ID_DEVELOP` / `_MAIN` | ID da sua conta (12 dígitos), obtido com `aws sts get-caller-identity --query Account --output text` |
 | `TF_STATE_BUCKET_DEVELOP` / `_MAIN` | Nome do bucket criado acima |
 
 O `AWS_ACCOUNT_ID_*` funciona como trava: se estiver errado, o Terraform falha logo com erro de conta, em vez de fazer deploy no lugar errado.
