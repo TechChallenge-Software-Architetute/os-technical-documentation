@@ -19,6 +19,9 @@ Nenhum stack lê o state Terraform de outro. Os valores que um repositório prec
 > [!info] Conta e região
 > Conta `211125744084`, região `us-east-1`. A região já é o padrão de todos os stacks e pipelines, então `AWS_REGION` é opcional.
 
+> [!attention] Não use a conta do AWS Academy
+> O Learner Lab do AWS Academy não deixa criar usuários IAM nem access keys próprias. As únicas credenciais são as temporárias do lab, que expiram a cada sessão, e por isso não dá para criar o usuário de deploy que os pipelines usam. Faça o deploy com uma **conta AWS pessoal** e um usuário IAM com access keys permanentes. Com essas chaves o `AWS_SESSION_TOKEN_DEVELOP` não é necessário e pode ficar vazio.
+
 ---
 
 ## Etapa 0 — Pré-requisitos (uma vez por conta)
@@ -46,12 +49,9 @@ Configure estes antes de qualquer deploy. Todos os repositórios usam.
 |---|---|
 | `AWS_ACCESS_KEY_ID_DEVELOP` / `_MAIN` | Access key do usuário de deploy |
 | `AWS_SECRET_ACCESS_KEY_DEVELOP` / `_MAIN` | Secret key do usuário de deploy |
-| `AWS_SESSION_TOKEN_DEVELOP` | Session token, quando as chaves são temporárias (AWS Academy, prefixo `ASIA...`). Expira em cerca de 4 h |
+| `AWS_SESSION_TOKEN_DEVELOP` | Não é necessário com conta pessoal. Só se usa com chaves temporárias (prefixo `ASIA...`) |
 | `AWS_ACCOUNT_ID_DEVELOP` / `_MAIN` | `211125744084` |
 | `TF_STATE_BUCKET_DEVELOP` / `_MAIN` | Nome do bucket criado acima |
-
-> [!note] Session token
-> Hoje só `os-management-k8s-terraform`, `os-orchestrator` e `os-management` leem `AWS_SESSION_TOKEN_DEVELOP`. Com chaves temporárias, os outros pipelines falham na autenticação.
 
 O `AWS_ACCOUNT_ID_*` funciona como trava: se estiver errado, o Terraform falha logo com erro de conta, em vez de fazer deploy no lugar errado.
 
@@ -205,7 +205,7 @@ Cria o API Gateway REST, as rotas e o authorizer JWT. Os nomes das Lambdas são 
 
 | Mudou | Atualize | Refaça o deploy de |
 |---|---|---|
-| Credenciais AWS (expiraram) | `AWS_ACCESS_KEY_ID_*`, `AWS_SECRET_ACCESS_KEY_*`, `AWS_SESSION_TOKEN_DEVELOP` | O que for rodar em seguida |
+| Credenciais AWS (rotacionadas) | `AWS_ACCESS_KEY_ID_*`, `AWS_SECRET_ACCESS_KEY_*` | O que for rodar em seguida |
 | Conta AWS | Secrets base + novo bucket de state; tudo é recriado do zero | Todas as etapas, na ordem |
 | VPC/cluster recriados | `VPC_ID_*`, `SUBNET_IDS_*`, `VPC_SECURITY_GROUP_IDS_*` | 2, 3, 5, 6 |
 | Banco recriado | `DB_URL_*` | 3, 5 |
