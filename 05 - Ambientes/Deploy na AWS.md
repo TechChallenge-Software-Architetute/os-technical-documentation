@@ -223,11 +223,26 @@ Aplicação Spring Boot no EKS (`kubectl apply -k k8s/`), mais o stack Terraform
 |---|---|
 | `ORIGIN_URL` (develop, **sem sufixo**) / `ORIGIN_URL_MAIN` | Hostname do LoadBalancer do Service `os-management`, no formato `http://<hostname>:8080` |
 
+**Pelo console da AWS (sem kubectl):**
+1. No [console da AWS](https://console.aws.amazon.com/), confira no canto superior direito se a região selecionada é a do deploy (a mesma do secret `AWS_REGION`).
+2. Na barra de busca do topo, digite **EC2** e abra o serviço.
+3. No menu da esquerda, em **Load Balancing**, clique em **Load Balancers**.
+4. O nome do load balancer é gerado automaticamente pelo Kubernetes (uma sequência de letras e números), então ele não se chama `os-management`. Para achar o certo, selecione cada um e abra a aba **Tags**. O do app tem a tag `kubernetes.io/service-name` com o valor `os-management/os-management`. Outra pista: na aba **Listeners**, ele escuta na porta **8080**.
+5. Na aba **Details** (ou **Description**), copie o **DNS name**, algo como `a1b2c3...-123456789.us-east-2.elb.amazonaws.com`.
+6. Monte o valor do secret como `http://<DNS name>:8080` e salve em `ORIGIN_URL` (develop) ou `ORIGIN_URL_MAIN` (main).
+
+> [!note] O load balancer demora alguns minutos
+> Logo depois do primeiro deploy, o load balancer pode ainda estar em **Provisioning**. Espere o estado ficar **Active** e o DNS responder antes de rodar o gateway.
+
+**Pelo kubectl (alternativa):**
+
 ```bash
 aws eks update-kubeconfig --name os-management-develop --region "$AWS_REGION"
 kubectl get svc os-management -n os-management \
   -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
 ```
+
+Rode os dois comandos separadamente. O `kubectl` só funciona para quem tem acesso ao cluster. Por padrão, só o usuário de deploy que criou o cluster tem esse acesso (`enable_cluster_creator_admin_permissions = true`). Com outro usuário, o comando falha com `the server has asked for the client to provide credentials`. Para dar acesso, abra **EKS → Clusters → os-management-develop → aba Access → Create access entry**, escolha o seu usuário em **IAM principal**, adicione a policy `AmazonEKSClusterAdminPolicy` com escopo **Cluster** e clique em **Create**.
 
 > [!tip] Pod em CrashLoopBackOff
 > Se o pod reinicia em loop, veja o log da execução que falhou com `kubectl logs -n os-management <pod> --previous`. Os avisos do HPA sobre métricas de CPU são consequência de não haver pod pronto.
