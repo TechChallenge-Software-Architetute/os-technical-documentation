@@ -257,12 +257,11 @@ Cria o API Gateway REST, as rotas e o authorizer JWT. Os nomes das Lambdas são 
 
 **Resultado:** o output `invoke_url` é a URL pública da API, no formato `https://<api-id>.execute-api.<região>.amazonaws.com/<env>`. É essa URL que os clientes usam, e não o `ORIGIN_URL`.
 
-**Pelo log do pipeline:**
-1. No repositório `os-management-gateway`, abra a aba **Actions** e clique no run do deploy.
-2. Abra o job de deploy e expanda o step **Show gateway URL**.
-3. O step imprime o `auth endpoint`, que é o invoke URL com `/auth` no final. Tire o `/auth` e você tem o invoke URL.
+**Como pegar o invoke URL:**
 
-**Pelo console da AWS:**
+> [!warning] Não copie a URL do log do pipeline
+> O step **Show gateway URL** imprime a URL, mas o GitHub mascara com `***` qualquer trecho igual ao valor de um secret. Como a região está no secret `AWS_REGION`, ela some da URL no log. Pegue a URL direto no console da AWS.
+
 1. No [console da AWS](https://console.aws.amazon.com/), confira no canto superior direito se a região é a do deploy.
 2. Na barra de busca do topo, digite **API Gateway** e abra o serviço.
 3. Na lista de **APIs**, clique em `os-management-gateway`.
