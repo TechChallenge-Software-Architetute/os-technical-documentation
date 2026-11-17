@@ -23,6 +23,9 @@ cssclasses:
 - [[Tecnologias]] — Stack completa com versões
 - [[Padroes de Projeto]] — VSA, DDD, Handler Pattern
 
+### Arquitetura Corporativa (Fase 3)
+- [[Documentacao Corporativa (Fase 3)]] — RFCs, ADRs, diagrama ER, diagramas de sequência e status de entrega dos 5 repositórios
+
 ### Regras de Negócio
 - [[Ciclo de Vida da OS]] — Estados e transições da Ordem de Serviço
 - [[Reserva de Estoque]] — Operação atômica e rastreabilidade
